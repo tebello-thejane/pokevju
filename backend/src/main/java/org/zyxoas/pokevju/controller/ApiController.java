@@ -1,5 +1,8 @@
 package org.zyxoas.pokevju.controller;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.jayway.jsonpath.JsonPath;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +25,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RequestMapping("/api")
@@ -35,17 +40,12 @@ public class ApiController {
     @Value("${pokevju.homesprites.url.format}")
     private String spriteUrlFormat;
 
-    private static boolean namesFetched = false;
-
     private static final Map<String, Integer> pokeIdMap = new HashMap<>();
 
     @GetMapping("/allnames")
     @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "Retrieve all Pokémon names and associated ID's", tags = {"pokemon"})
     public List<Map<String, String>> getNames() {
-        if (!namesFetched) {
-            fetchNames();
-        }
 
         return pokeIdMap.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
@@ -58,30 +58,39 @@ public class ApiController {
                 .collect(Collectors.toList());
     }
 
-    @GetMapping("/sprite/{name}")
-    @Produces({org.springframework.http.MediaType.IMAGE_PNG_VALUE})
-    @Operation(summary = "Redirect to Pokémon's sprite URL", tags = {"pokemon"})
-    public void getPictureUrlByName(HttpServletResponse response, @PathVariable("name") String name) throws IOException {
-        if (!namesFetched) {
-            fetchNames();
-        }
+    final LoadingCache<Integer, byte[]> imgCache = CacheBuilder.newBuilder()
+            .maximumSize(20)
+            .expireAfterAccess(5, TimeUnit.MINUTES)
+            .recordStats()
+            .build(new CacheLoader<>() {
+                @Override
+                public byte[] load(Integer id) {
+                    return WebClient
+                            .create(String.format(spriteUrlFormat, id))
+                            .get()
+                            .retrieve()
+                            .bodyToMono(byte[].class)
+                            .block();
+                }
+            });
 
+    @GetMapping("/sprite/{name}")
+    @Produces("image/svg+xml")
+    @Operation(summary = "Redirect to Pokémon's sprite URL", tags = {"pokemon"})
+    public void getPictureUrlByName(
+            HttpServletResponse response,
+            @PathVariable("name") String name
+    ) throws IOException, ExecutionException {
         final Integer id = pokeIdMap.get(name);
 
         if (id == null) {
             response.setStatus(HttpStatus.NOT_FOUND.value());
         } else {
 
-            final byte[] apiResponse = WebClient
-                    .create(String.format(spriteUrlFormat, id))
-                    .get()
-                    .retrieve()
-                    .bodyToMono(byte[].class)
-                    .block();
+            final byte[] apiResponse = imgCache.get(id);
 
-            response.setContentType(org.springframework.http.MediaType.IMAGE_PNG_VALUE);
+            response.setContentType("image/svg+xml");
 
-            assert apiResponse != null;
             StreamUtils.copy(apiResponse, response.getOutputStream());
         }
     }
@@ -99,7 +108,7 @@ public class ApiController {
                 .bodyToMono(String.class)
                 .block();
 
-        JSONArray pikamap = JsonPath
+        final JSONArray pikamap = JsonPath
                 .parse(apiResponse)
                 .read("$.results.*");
 
@@ -128,9 +137,6 @@ public class ApiController {
                 pokeIdMap.put(name, id);
             }
         });
-
-
-        namesFetched = true;
 
         log.info("Done fetching {} Pokémon names and ID's.", pokeIdMap.size());
     }
