@@ -1,0 +1,14 @@
+springdoc:
+  swagger-ui:
+    path: "/oa3.dummy"
+
+spring:
+  main:
+    banner-mode: "off"
+  autoconfigure:
+    exclude:
+      - "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
+      - "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration"
+      - "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
+  profiles:
+    active: "test"

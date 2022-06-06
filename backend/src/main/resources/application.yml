@@ -1,0 +1,19 @@
+pokevju:
+  pokeapi:
+    url: ${POKEVJU_POKEAPI_URL:https://pokeapi.co/api/v2}
+  homesprites:
+    url:
+      format: ${POKEVJU_HOMESPRITES_URL_FORMAT:https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/%s.svg}
+
+springdoc:
+  swagger-ui:
+    path: "/api/swagger-ui.html"
+
+spring:
+  main:
+    banner-mode: "off"
+  autoconfigure:
+    exclude:
+      - "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
+      - "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration"
+      - "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
