@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
@@ -85,10 +86,11 @@ public class ApiController {
         }
     }
 
+    @PostConstruct
     private void fetchNames() {
         final int limit = 2000;
 
-        log.info("Fetching Pokemon names and ID's the first time.");
+        log.info("Fetching Pokémon names and ID's the first time.");
 
         final String apiResponse = WebClient
                 .create(pokeapiUrl + "/pokemon/?offset=0&limit=" + limit)
@@ -130,6 +132,6 @@ public class ApiController {
 
         namesFetched = true;
 
-        log.info("Done fetching {} Pokemon names and ID's.", pokeIdMap.size());
+        log.info("Done fetching {} Pokémon names and ID's.", pokeIdMap.size());
     }
 }
