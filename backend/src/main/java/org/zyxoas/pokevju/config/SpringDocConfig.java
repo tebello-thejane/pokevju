@@ -21,8 +21,8 @@ public class SpringDocConfig {
     public OpenAPI pokevjuOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("PokeVju API")
-                        .description("PokeVju backend application")
+                        .title("PokéVju API")
+                        .description("PokéVju backend application")
                         .version("v0.0.1")
                         .license(new License()
                                 .name("MIT")

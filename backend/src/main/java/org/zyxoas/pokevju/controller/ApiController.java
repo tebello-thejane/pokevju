@@ -40,7 +40,7 @@ public class ApiController {
 
     @GetMapping("/allnames")
     @Produces({MediaType.APPLICATION_JSON})
-    @Operation(summary = "Retrieve all Pokemon names and associated ID's", tags = {"pokemon"})
+    @Operation(summary = "Retrieve all Pokémon names and associated ID's", tags = {"pokemon"})
     public List<Map<String, String>> getNames() {
         if (!namesFetched) {
             fetchNames();
@@ -59,9 +59,8 @@ public class ApiController {
 
     @GetMapping("/sprite/{name}")
     @Produces({org.springframework.http.MediaType.IMAGE_PNG_VALUE})
-    @Operation(summary = "Redirect to Pokemon's sprite URL", tags = {"pokemon"})
+    @Operation(summary = "Redirect to Pokémon's sprite URL", tags = {"pokemon"})
     public void getPictureUrlByName(HttpServletResponse response, @PathVariable("name") String name) throws IOException {
-
         if (!namesFetched) {
             fetchNames();
         }
