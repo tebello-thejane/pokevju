@@ -1,0 +1,10 @@
+{
+  admin off
+  auto_https off
+}
+
+
+http://localhost:8082
+
+root * frontend
+file_server
