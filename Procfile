@@ -1,1 +1,1 @@
-web: caddy run
+web: node server.js
