@@ -12,3 +12,8 @@ spring:
       - "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
   profiles:
     active: "test"
+
+pokevju:
+  frontend:
+    domain:
+      url: ${POKEVJU_FRONTEND_DOMAIN_URL:http://localhost:8081}

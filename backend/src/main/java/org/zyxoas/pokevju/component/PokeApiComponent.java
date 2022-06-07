@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import javax.annotation.PostConstruct;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
@@ -20,19 +21,43 @@ public class PokeApiComponent implements ApiComponent {
     @Value("${pokevju.homesprites.url.format}")
     private String spriteUrlFormat;
 
+    @Value("${pokevju.homesprites.locations}")
+    private List<String> spriteUrlLocations;
+
+    @Value("${pokevju.homesprites.extensions}")
+    private List<String> spriteUrlExtensions;
+
     @Value("${pokevju.pokeapi.url}")
     private String pokeapiUrl;
 
     private static final Map<String, Integer> pokeIdMap = new HashMap<>();
 
+    //To mitigate the possibility of being throttled by CloudFlare
+    private static final String userAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1";
+
     @Override
     public byte[] getSprite(Integer id) {
-        return WebClient
-                .create(String.format(spriteUrlFormat, id))
-                .get()
-                .retrieve()
-                .bodyToMono(byte[].class)
-                .block();
+
+        for (int i = 0; i <= spriteUrlLocations.size(); i++) {
+
+            final String theUrl = String.format(spriteUrlFormat, spriteUrlLocations.get(i), id, spriteUrlExtensions.get(i));
+            try {
+                return WebClient
+                        .create(theUrl)
+                        .get()
+                        .header("User-Agent", userAgent)
+                        .retrieve()
+                        .bodyToMono(byte[].class)
+                        .doOnError(throwable -> {
+                            throw new RuntimeException(throwable);
+                        })
+                        .block();
+            } catch (RuntimeException ex) {
+                log.warn("Error encountered when attempting " + theUrl);
+            }
+        }
+
+        throw new RuntimeException("All sprite URL's seem to have failed.");
     }
 
     @Override
@@ -42,6 +67,7 @@ public class PokeApiComponent implements ApiComponent {
 
     @PostConstruct
     private void fetchNames() {
+        log.info(spriteUrlLocations.toString());
         final int limit = 2000;
 
         //Do this asynchronously (fire & forget) so that it does not block booting
@@ -52,6 +78,7 @@ public class PokeApiComponent implements ApiComponent {
             final String apiResponse = WebClient
                     .create(pokeapiUrl + "/pokemon/?offset=0&limit=" + limit)
                     .get()
+                    .header("User-Agent", userAgent)
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
