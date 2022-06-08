@@ -1,5 +1,5 @@
-require('dotenv').config();
+import config from dotenv
 
-const urlDomain = process.env.BACKENDDOMAIN || "http://localhost:8080";
+const urlDomain = config.process.env.BACKENDDOMAIN || "http://localhost:8080";
 
 export {urlDomain};
