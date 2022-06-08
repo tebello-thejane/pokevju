@@ -6,4 +6,4 @@ var app = express();
 app.use(express.static(__dirname )); //Serves resources from public folder
 
 
-var server = app.listen(process.env.PORT || 5000);
+var server = app.listen(process.env.PORT || 8081);

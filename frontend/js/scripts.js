@@ -1,4 +1,5 @@
-import { urlDomain } from "./config.js";
+const urlDomain = process.env.BACKENDDOMAIN || "http://localhost:8080";
+
 
 window.addEventListener('DOMContentLoaded', event => {
 
