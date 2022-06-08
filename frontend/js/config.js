@@ -1,3 +1,3 @@
-const urlDomain = "http://localhost:8080";
+const urlDomain = process.env.BACKENDDOMAIN || "http://localhost:8080";
 
 export {urlDomain};
