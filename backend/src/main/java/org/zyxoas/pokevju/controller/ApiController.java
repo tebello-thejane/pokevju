@@ -3,44 +3,34 @@ package org.zyxoas.pokevju.controller;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.jayway.jsonpath.JsonPath;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
-import net.minidev.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.boot.web.servlet.filter.ApplicationContextHeaderFilter;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
-//import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 import org.zyxoas.pokevju.component.ApiComponent;
 
-import javax.annotation.PostConstruct;
-import javax.servlet.Filter;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-@RequestMapping("/api")
+@RequestMapping("/api/v1") //<< API versioning
 @RestController
 @Slf4j
 public class ApiController {
@@ -65,6 +55,7 @@ public class ApiController {
         config.addAllowedMethod("POST");
         config.addAllowedMethod("DELETE");
         config.addAllowedMethod("PATCH");
+        config.applyPermitDefaultValues();
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
@@ -85,19 +76,18 @@ public class ApiController {
                 .collect(Collectors.toList());
     }
 
-    final LoadingCache<Integer, byte[]> imgCache = CacheBuilder.newBuilder()
+    final LoadingCache<Integer, ApiComponent.TaggedImage> imgCache = CacheBuilder.newBuilder()
             .maximumSize(20)
             .expireAfterAccess(5, TimeUnit.MINUTES)
-            .recordStats()
             .build(new CacheLoader<>() {
                 @Override
-                public byte[] load(Integer id) {
+                public ApiComponent.TaggedImage load(Integer id) {
                     return apiComponent.getSprite(id);
                 }
             });
 
     @GetMapping("/sprite/{name}")
-    @Produces("image/svg+xml")
+    @Produces({"image/svg+xml, image/png"})
     @Operation(summary = "Redirect to Pokémon's sprite URL", tags = {"pokemon"})
     public void getPictureUrlByName(
             HttpServletResponse response,
@@ -109,11 +99,11 @@ public class ApiController {
             response.setStatus(HttpStatus.NOT_FOUND.value());
         } else {
 
-            final byte[] apiResponse = imgCache.get(id);
+            final ApiComponent.TaggedImage apiResponse = imgCache.get(id);
 
-            response.setContentType("image/svg+xml");
+            response.setContentType(apiResponse.getMediaType());
 
-            StreamUtils.copy(apiResponse, response.getOutputStream());
+            StreamUtils.copy(apiResponse.getContents(), response.getOutputStream());
         }
     }
 }

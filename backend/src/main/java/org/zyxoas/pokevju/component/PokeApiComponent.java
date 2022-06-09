@@ -5,14 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONArray;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Component
 @Profile("!test")
@@ -36,23 +39,36 @@ public class PokeApiComponent implements ApiComponent {
     private static final String userAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1";
 
     @Override
-    public byte[] getSprite(Integer id) {
+    public TaggedImage getSprite(Integer id) {
 
         for (int i = 0; i <= spriteUrlLocations.size(); i++) {
 
             final String theUrl = String.format(spriteUrlFormat, spriteUrlLocations.get(i), id, spriteUrlExtensions.get(i));
             try {
-                return WebClient
+                final AtomicReference<String> tp = new AtomicReference<>("");
+                byte[] ret = WebClient
                         .create(theUrl)
                         .get()
-                        .header("User-Agent", userAgent)
-                        .retrieve()
-                        .bodyToMono(byte[].class)
+                        .header("User-Agent", userAgent).exchangeToMono(response -> {
+                            if (response.statusCode().equals(HttpStatus.OK)) {
+                                tp.set(response.headers().contentType().get().toString());
+                                return response.bodyToMono(byte[].class);
+                            } else {
+                                return response.createException().flatMap(Mono::error);
+                            }
+                        })
                         .doOnError(throwable -> {
                             throw new RuntimeException(throwable);
                         })
                         .block();
-            } catch (RuntimeException ex) {
+
+                assert ret != null;
+
+                return TaggedImage.builder()
+                        .mediaType(tp.get())
+                        .contents(ret)
+                        .build();
+            } catch (Exception ex) {
                 log.warn("Error encountered when attempting " + theUrl);
             }
         }

@@ -27,7 +27,7 @@ class ApiControllerTest {
 
     @Test
     void testGetNames() throws Exception {
-        mockMvc.perform(get("/api/allnames")
+        mockMvc.perform(get("/api/v1/allnames")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content()
@@ -38,7 +38,7 @@ class ApiControllerTest {
     void getPictureUrlByName() throws Exception {
         apiComponent.getIdMap().put("slowpoke", 1);
 
-        mockMvc.perform(get("/api/sprite/slowpoke")
+        mockMvc.perform(get("/api/v1/sprite/slowpoke")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content()
