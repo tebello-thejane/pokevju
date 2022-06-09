@@ -1,4 +1,5 @@
-const urlDomain = process.env.BACKENDDOMAIN || "http://localhost:8080";
+const urlDomain = BACKENDDOMAIN;
+console.log(urlDomain)
 
 
 window.addEventListener('DOMContentLoaded', event => {
