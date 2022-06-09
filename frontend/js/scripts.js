@@ -6,7 +6,7 @@ window.addEventListener('DOMContentLoaded', event => {
 
     var justNames = [];
 
-    $.getJSON(`${urlDomain}/api/allnames`, function(data) {
+    $.getJSON(`${urlDomain}/api/v1/allnames`, function(data) {
         $.each(data, function(index, value) {
             justNames.push(value.name.toUpperCase());
             $('#poke-names').append(`<option value='${value.name}'>`);
@@ -22,7 +22,7 @@ window.addEventListener('DOMContentLoaded', event => {
                     const name = opts[i].value;
 
                     $("#heading")[0].innerText = name;
-                    $("#poke-img")[0].src = `${urlDomain}/api/sprite/${name.toLowerCase()}`;
+                    $("#poke-img")[0].src = `${urlDomain}/api/v1/sprite/${name.toLowerCase()}`;
                     break;
                 }
             }
